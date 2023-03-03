@@ -56,6 +56,9 @@ int main()
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
         glfwPollEvents();
+
+        if(glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
+            glfwSetWindowShouldClose(window, true);
     }
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
