@@ -5,11 +5,48 @@
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
 
-static int CreateShader(const std::string& vertexShader, const std::string& fragmentShader) {
 
+static unsigned int CompileShader(unsigned int type, const std::string &source) 
+{
+    unsigned int id = glCreateShader(GL_VERTEX_SHADER); // parecido a cuando haces un buffer pero es una inconsistencia de opengl
+    const char *src = source.c_str(); 
+    glShaderSource(id, 1, &src, nullptr);
+    glCompileShader(id);
+
+    // error handleing
+    int success;
+    char infoLog[512];
+    glGetShaderiv(id, GL_COMPILE_STATUS, &success);
+    if(!success) 
+    {
+        glGetShaderInfoLog(id, 512, NULL, infoLog);
+        std::cout << "SHADER_COMPILATION_FAILED\n" << infoLog << std::endl;
+    }
+
+    return id;
 }
 
-int main() {
+
+static unsigned int CreateShader(const std::string &vertexShader, const std::string &fragmentShader) 
+{    
+    unsigned int program = glCreateProgram();
+    unsigned int vs = CompileShader(GL_VERTEX_SHADER, vertexShader);
+    unsigned int fs = CompileShader(GL_FRAGMENT_SHADER, fragmentShader);
+
+    glAttachShader(program, vs);
+    glAttachShader(program, fs);
+    glLinkProgram(program);
+    glValidateProgram(program);
+
+    glDeleteShader(vs);
+    glDeleteShader(fs);
+
+    return program;
+}
+
+
+int main() 
+{
     // glfw: initialize and configure
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -39,10 +76,10 @@ int main() {
          0.0f,  0.5f, 0.0f
     };
 
-    unsigned int buffer; // Vertex buffer object
-    glGenBuffers(1, &buffer); // We generate our buffer an ID
-    glBindBuffer(GL_ARRAY_BUFFER, buffer); // we select our buffer
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // put the data into our buffer that is now selected by opengl
+    unsigned int bufferID; // Vertex buffer object
+    glGenBuffers(1, &bufferID); // We generate our buffer and assign it a number ID
+    glBindBuffer(GL_ARRAY_BUFFER, bufferID); // we select our buffer
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // put the data into the actual buffer that is now selected by opengl
 
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float)*3, (void*)0); // start position - quantity of vertices - Normalization - byte shift - 
