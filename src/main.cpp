@@ -8,19 +8,21 @@ void processInput(GLFWwindow *window);
 
 static unsigned int CompileShader(unsigned int type, const std::string &source) 
 {
-    unsigned int id = glCreateShader(GL_VERTEX_SHADER); // parecido a cuando haces un buffer pero es una inconsistencia de opengl
+    unsigned int id = glCreateShader(type); // parecido a cuando haces un buffer pero es una inconsistencia de opengl
     const char *src = source.c_str(); 
-    glShaderSource(id, 1, &src, nullptr);
+    glShaderSource(id, 1, &src, nullptr); // Atach shader object (by id) to the source code
     glCompileShader(id);
 
     // error handleing
-    int success;
+    GLint success;
     char infoLog[512];
     glGetShaderiv(id, GL_COMPILE_STATUS, &success);
     if(!success) 
     {
         glGetShaderInfoLog(id, 512, NULL, infoLog);
-        std::cout << "SHADER_COMPILATION_FAILED\n" << infoLog << std::endl;
+        std::cout << (type == GL_VERTEX_SHADER ? "VERTEX" : "FRAGMENT") << "_SHADER_COMPILATION_FAILED\n" << infoLog << std::endl;
+        glDeleteShader(id);
+        return 0;
     }
 
     return id;
@@ -76,14 +78,46 @@ int main()
          0.0f,  0.5f, 0.0f
     };
 
+    /* un Vertex Array Object (VAO) guarda los siguientes datos:
+        - Llamadas a 'glEnableVertexAttribArray'
+        - Configuraciones via 'glVertexAttribPointer'
+    */
+    unsigned int attributeID; // Vertex array object
+    glGenVertexArrays(1, &attributeID); // We generate our array and assign it a number ID
+    glBindVertexArray(attributeID); // we select our vertex array 
+
     unsigned int bufferID; // Vertex buffer object
     glGenBuffers(1, &bufferID); // We generate our buffer and assign it a number ID
     glBindBuffer(GL_ARRAY_BUFFER, bufferID); // we select our buffer
+    
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // put the data into the actual buffer that is now selected by opengl
 
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float)*3, (void*)0); // start position - quantity of vertices - Normalization - byte shift - 
+    
 
+    std::string vertexShader = 
+        "#version 330 core\n"
+        "\n"
+        "layout(location = 0) in vec4 position;\n"
+        "\n"
+        "void main()\n"
+        "{\n"
+        "   gl_Position = position;\n"
+        "}\n";
+
+    std::string fragmentShader = 
+        "#version 330 core\n"
+        "\n"
+        "layout(location = 0) out vec4 color;\n"
+        "\n"
+        "void main()\n"
+        "{\n"
+        "   color = vec4(1.0f, 0.0f, 0.0f, 1.0f);\n"
+        "}\n";
+
+    unsigned int shader = CreateShader(vertexShader, fragmentShader);
+    glUseProgram(shader);
 
     // render loop
     while (!glfwWindowShouldClose(window))
