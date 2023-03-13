@@ -1,6 +1,51 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <fstream>
+#include <string>
+#include <sstream>
+
+struct ShaderProgramSource
+{
+    std::string VertexSource;
+    std::string FragmentSource;
+};
+
+static ShaderProgramSource ParseShader(const std::string& filepath) 
+{
+    std::ifstream stream(filepath);
+
+    enum class ShaderType {
+        NONE = -1, 
+        VERTEX = 0, 
+        FRAGMENT = 1
+    };
+
+    std::string line;
+    std::stringstream ss[2];
+    ShaderType type = ShaderType::NONE;
+    
+    while(getline(stream, line)) {
+        if (line.find("#shader") != std::string::npos) 
+        {
+            if (line.find("vertex") != std::string::npos) 
+            {
+                type = ShaderType::VERTEX;
+            } 
+            else if (line.find("fragment") != std::string::npos)  
+            {
+                type = ShaderType::FRAGMENT;
+            }
+        } 
+        else 
+        {
+            ss[(int)type] << line << '\n';
+        }
+    }
+
+    return { ss[0].str(), ss[1].str() };
+}
+
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
@@ -94,30 +139,16 @@ int main()
 
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float)*3, (void*)0); // start position - quantity of vertices - Normalization - byte shift - 
+
+    ShaderProgramSource source = ParseShader("../res/shaders/Basic.shader");
     
+    std::cout << "VERTEX: " << std::endl;
+    std::cout << source.VertexSource << std::endl;
+    std::cout << "FRAGMENT: " << std::endl;
+    std::cout << source.FragmentSource << std::endl;
 
-    std::string vertexShader = 
-        "#version 330 core\n"
-        "\n"
-        "layout(location = 0) in vec4 position;\n"
-        "\n"
-        "void main()\n"
-        "{\n"
-        "   gl_Position = position;\n"
-        "}\n";
-
-    std::string fragmentShader = 
-        "#version 330 core\n"
-        "\n"
-        "layout(location = 0) out vec4 color;\n"
-        "\n"
-        "void main()\n"
-        "{\n"
-        "   color = vec4(1.0f, 0.0f, 0.0f, 1.0f);\n"
-        "}\n";
-
-    unsigned int shader = CreateShader(vertexShader, fragmentShader);
-    glUseProgram(shader);
+    // unsigned int shader = CreateShader(vertexShader, fragmentShader);
+    // glUseProgram(shader);
 
     // render loop
     while (!glfwWindowShouldClose(window))
@@ -177,3 +208,5 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     // height will be significantly larger than specified on retina displays.
     glViewport(0, 0, width, height);
 }
+
+    
